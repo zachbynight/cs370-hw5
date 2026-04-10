@@ -9,6 +9,6 @@ int main(int argCount, char** args) {
         printf("Error: must provide at least one instruction");
         return 1;
     }
-    struct Instruction instruction = parseInstruction(args[1]);
+    Instruction instruction = parseInstruction(args[1]);
     printf(instructionAsText(instruction));
 }

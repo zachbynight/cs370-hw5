@@ -1,16 +1,16 @@
 #ifndef InstructionDefinition
 #define InstructionDefinition
 
-struct Instruction {
+typedef struct {
     int processID;
     int arrivalTime;
     int burstDuration;
     int priority;
-};
+} Instruction;
 
 #endif
 
 
-extern struct Instruction parseInstruction();
+extern Instruction parseInstruction();
 
 extern char* instructionAsText();
