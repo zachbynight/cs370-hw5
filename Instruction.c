@@ -18,3 +18,14 @@ char* instructionAsText(Instruction instruction) {
     sprintf(text, "Process ID: %d\nArrival time: %d\nBurst duration: %d\nPriority: %d\n", instruction.processID, instruction.arrivalTime, instruction.burstDuration, instruction.priority);
     return text;
 }
+
+int compareByArrivalTime(const void *p, const void *q) {
+    Instruction *a = (Instruction*) p;
+    Instruction *b = (Instruction*) q;
+    return (*a).arrivalTime - (*b).arrivalTime;
+}
+
+Instruction* sortByArrivalTime(int numInstructions, Instruction* instructions) {
+    qsort(instructions, numInstructions, sizeof(Instruction), compareByArrivalTime);
+    return instructions;
+}
