@@ -1,7 +1,8 @@
-MAIN_FILES=Scheduler.c Instruction.c
+MAIN_FILES=Scheduler.c Instruction.c FCFS.c SJFP.c PtrList.c
+HEADER_FILES=Scheduler.h Instruction.h FCFS.h SJFP.h PtrList.h
 MAIN_OUT_FILE=Scheduler.out
 
-FILES_TO_ZIP=${MAIN_FILES} README.md makefile
+FILES_TO_ZIP=${MAIN_FILES} ${HEADER_FILES} README.md makefile
 ZIP_FILE=Zach-Townsend-HW5.zip
 
 
@@ -29,28 +30,31 @@ test_zip_unzip:
 	unzip tzz/${ZIP_FILE} -d tzz
 	cd tzz
 	make build
-	./${MAIN_OUT_FILE} 24 3 4 5 6
 
 clean_tzz:
 	rm -fv -r tzz
 
-fcfs_simple:
-	make build
-	clear
-	./${MAIN_OUT_FILE} 0,0,5,0 1,5,15,0 2,20,10,0
-
-fcfs_big_arrives_first:
+big_arrives_first:
 	make build
 	clear
 	./${MAIN_OUT_FILE} "0,0,15,0" "1,1,3,0", "2,2,3,0"
 
-fcfs_big_arrives_last:
+big_arrives_last:
 	make build
 	clear
 	./${MAIN_OUT_FILE} "1,0,3,0", "2,1,3,0" "0,2,15,0"
 
-fcfs_test_different_order:
+simple:
 	make build
 	clear
-	./${MAIN_OUT_FILE} "1,0,3,0" "0,2,15,0" "2,1,3,0"
-	./${MAIN_OUT_FILE} "1,0,3,0" "2,1,3,0" "0,2,15,0"
+	./${MAIN_OUT_FILE} 0,0,5,0 1,6,5,0
+
+test_preemptive:
+	make build
+	clear
+	./${MAIN_OUT_FILE} 1,0,8,0   2,1,4,0   3,2,9,0   4,3,5,0
+
+same_arrival_time:
+	make build
+	clear
+	./${MAIN_OUT_FILE} 1,0,6,0 2,0,8,0 3,0,7,0 4,0,3,0

@@ -1,1 +1,1 @@
-# cs370-hw5
+Instruction order: process ID, arrival time, burst duration, priority
