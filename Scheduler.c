@@ -6,6 +6,8 @@
 #include "Scheduler.h"
 #include "FCFS.h"
 #include "SJFP.h"
+#include "PtrList.h"
+#include "string.h"
 
 
 Report nullReport() {
@@ -37,7 +39,7 @@ Report divideReport(Report a, float b) {
 
 char* reportAsText(Report report) {
     char* text = malloc(1000 * sizeof(char));
-    sprintf(text, "Turnaround time: %f\nWaiting time: %f\nThroughput: %f\n", report.turnaroundTime, report.waitingTime, report.throughput);
+    sprintf(text, "Average Turnaround Time: %.3f\nAverage Waiting Time: %.3f\nThroughput: %.3f\n", report.turnaroundTime, report.waitingTime, report.throughput);
     return text;
 }
 
@@ -71,6 +73,7 @@ Process* newProcess(int processID, int arrivalTime, int burstDuration) {
     (*processPtr).activeStartTime = -1;
     (*processPtr).completionTime = -1;
     (*processPtr).progress = 0;
+    (*processPtr).remainingBurst = burstDuration;
     (*processPtr).previousProgress = 0;
     //printf("Allocating new process %d with pointer %d\n", (*processPtr).processID, processPtr);
     return processPtr;
@@ -94,29 +97,58 @@ bool processIsComplete(Process process) {
     return process.completionTime != -1;
 }
 
+Instruction* readInstructionsFromFile(int* size, char* filename) {
+    FILE* filePtr;
+    filePtr = fopen(filename, "r");
+    if (filePtr == NULL) {
+        printf("Error: could not open file %s\n", filename);
+        return NULL;
+    }
+    int numInstructions = 0;
+    char line[25];
+    Instruction* raw = malloc(125 * sizeof(Instruction));
+    while(fscanf(filePtr, "%s", line) != EOF) {
+        if (line == "") {
+            continue;
+        }
+        raw[numInstructions] = parseInstruction(line);
+        numInstructions++;
+    }
+    fclose(filePtr);
+    *size = numInstructions;
+    Instruction* instructions = malloc(numInstructions * sizeof(Instruction));
+    for (int i = 0; i < numInstructions; i++) {
+        instructions[i] = raw[i];
+    }
+    return instructions;
+}
 
 int main(int argCount, char** args) {
-    if (argCount == 1) {
-        printf("Error: must provide at least one instruction");
+    printf("enter\n");
+    if (argCount < 2) {
+        printf("Error: must provide filename");
         return 1;
     }
-    Instruction* instructions = malloc((argCount - 1) * sizeof(Instruction));
-    for (int i = 1; i < argCount; i++) {
-        instructions[i - 1] = parseInstruction(args[i]);
-    }
-    Report report = runSJFP(argCount - 1, instructions);
+    //printf("read instructions\n");
+    int* numProcessesPtr = malloc(sizeof(int));
+    Instruction* instructions = readInstructionsFromFile(numProcessesPtr, args[1]);
+    //printf("sort instructions\n");
+    int numProcesses = *numProcessesPtr;
+    //sortByArrivalTime(numProcesses, instructions);
+    //printf("run sjfp\n");
+    Report report;
+    report = runFCFS(instructions, numProcesses);
     if (isReportNull(report)) {
         printf("Error: report could not be generated\n");
     }
     else {
-        printf("Shortest job first:\n%s\n", reportAsText(report));
+        printf("--- FCFS ---\n%s\n", reportAsText(report));
     }
-    report = runFCFS(instructions, argCount - 1);
+    report = runSJFP(instructions, numProcesses);
     if (isReportNull(report)) {
         printf("Error: report could not be generated\n");
     }
     else {
-        printf("First-come, first-serve:\n%s", reportAsText(report));
+        printf("--- SJFP ---\n%s\n", reportAsText(report));
     }
-    free(instructions);
 }

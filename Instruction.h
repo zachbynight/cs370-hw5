@@ -8,6 +8,8 @@ typedef struct {
 } Instruction;
 #endif
 
+extern Instruction* parseInstructionPtr();
+
 extern Instruction parseInstruction();
 
 extern char* instructionAsText();

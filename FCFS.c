@@ -1,5 +1,6 @@
 #include "Scheduler.h"
 #include "Instruction.h"
+#include "stdlib.h"
 
 
 Report simulateProcess(Instruction instruction, int startTime) {
