@@ -9,6 +9,9 @@ PtrList* newPtrList(int size) {
     // These are all null pointers by default
     // Null pointers cause a seg fault if you try to follow them
     (*newPtrListPtr).list = malloc(size * sizeof(void*));
+    for (int i = 0; i < size; i++) {
+        newPtrListPtr->list[i] = NULL;
+    }
     return newPtrListPtr;
 }
 

@@ -13,6 +13,15 @@ Instruction parseInstruction(char* line) {
     return newInstruction;
 }
 
+Instruction* parseInstructionPtr(char* line) {
+    Instruction* newInstruction = malloc(sizeof(Instruction));
+    (*newInstruction).processID = atoi(strtok(line, ","));
+    (*newInstruction).arrivalTime = atoi(strtok(NULL, ","));
+    (*newInstruction).burstDuration = atoi(strtok(NULL, ","));
+    (*newInstruction).priority = atoi(strtok(NULL, ","));
+    return newInstruction;
+}
+
 char* instructionAsText(Instruction instruction) {
     char* text = malloc(100 * sizeof(char));
     sprintf(text, "Process ID: %d\nArrival time: %d\nBurst duration: %d\nPriority: %d\n", instruction.processID, instruction.arrivalTime, instruction.burstDuration, instruction.priority);

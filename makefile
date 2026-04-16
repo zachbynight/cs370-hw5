@@ -21,40 +21,22 @@ clean:
 zip:
 	zip ${ZIP_FILE} ${FILES_TO_ZIP}
 
-test_zip_unzip:
-	make clean
-	make build
-	mkdir tzz
-	zip tzz.zip ${ZIP_FILE}
-	unzip tzz.zip -d tzz
-	unzip tzz/${ZIP_FILE} -d tzz
-	cd tzz
-	make build
-
-clean_tzz:
-	rm -fv -r tzz
-
-big_arrives_first:
-	make build
-	clear
-	./${MAIN_OUT_FILE} "0,0,15,0" "1,1,3,0", "2,2,3,0"
-
-big_arrives_last:
-	make build
-	clear
-	./${MAIN_OUT_FILE} "1,0,3,0", "2,1,3,0" "0,2,15,0"
-
-simple:
-	make build
-	clear
-	./${MAIN_OUT_FILE} 0,0,5,0 1,6,5,0
-
 test_preemptive:
 	make build
 	clear
-	./${MAIN_OUT_FILE} 1,0,8,0   2,1,4,0   3,2,9,0   4,3,5,0
+	./${MAIN_OUT_FILE} input_files/test_preemptive.csv
 
-same_arrival_time:
+test_large:
 	make build
 	clear
-	./${MAIN_OUT_FILE} 1,0,6,0 2,0,8,0 3,0,7,0 4,0,3,0
+	./${MAIN_OUT_FILE} input_files/large.csv
+
+test_small:
+	make build
+	clear
+	./${MAIN_OUT_FILE} input_files/small.csv
+
+test_big_arrives_first:
+	make build
+	clear
+	./${MAIN_OUT_FILE} input_files/big_arrives_first.csv

@@ -22,6 +22,7 @@ typedef struct {
     // not necessarily = startTime since preemption occurs
     int activeStartTime;
     int progress;
+    int remainingBurst;
     int previousProgress;
     int completionTime;
     Report* reportPtr;

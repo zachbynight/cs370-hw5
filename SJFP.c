@@ -8,6 +8,7 @@
 Report* markComplete(Process* processPtr, int completionTime) {
     //printf("%d (pointer: %d) marked complete at time %d\n", (*processPtr).processID, processPtr, completionTime);
     (*processPtr).progress = (*processPtr).burstDuration;
+    (*processPtr).remainingBurst = 0;
     (*processPtr).completionTime = completionTime;
     Report newReport;
     newReport.completionTime = (float) completionTime;
@@ -30,6 +31,7 @@ Report* calculateProgress(Process* processPtr, int currentTime) {
         return markComplete(processPtr, currentTime);
     }
     (*processPtr).progress = naiveProgress;
+    (*processPtr).remainingBurst = processPtr->burstDuration - (*processPtr).progress;
     return NULL;
 }
 
@@ -51,21 +53,34 @@ Process* getProcessPtrFromId(PtrList* listPtr, int processID) {
 }
 
 int compareProcesses(const void *p, const void *q) {
+    //printf("comparing %d with %d\n", p, q);
+    //printf("%d\n", *(void**) p);
+    //printf("%d\n", *(void**) q);
     if  (*((void**) p) == NULL) {
+        //printf("p was null, select q\n");
         return 1;
     }
     if  (*((void**) q) == NULL) {
+        //printf("q was null, select q\n");
         return -1;
     }
+    //printf("neither was null\n");
     Process* aPtr = (Process*) *((void**) p);
+    //printf("ptr to a: %d\n", aPtr);
     Process* bPtr = (Process*) *((void**) q);
+    //printf("ptr to b: %d\n", bPtr);
+    //printf("%d\n", (*aPtr).processID);
+    //printf("%d\n", (*bPtr).processID);
     if ((*aPtr).burstDuration != (*bPtr).burstDuration) {
-        return (*aPtr).burstDuration - (*bPtr).burstDuration;
+        //printf("select shorter burst duration\n");
+        return (*aPtr).remainingBurst - (*bPtr).remainingBurst;
     }
+    //printf("select sooner arrival time\n");
     return (*aPtr).arrivalTime - (*bPtr).arrivalTime;
 }
 
 void sortProcessPtrList(PtrList* listPtr) {
+    //printf("now sorting\n");
     qsort((*listPtr).list, (*listPtr).size, sizeof(void*), compareProcesses);
 }
 
@@ -109,32 +124,39 @@ void start(Process* processPtr, int currentTime) {
     //printf("Starting %d at %d\n", (*processPtr).processID, currentTime);
 }
 
-Report runSJFP(int numProcesses, Instruction* instructions) {
+Report runSJFP(Instruction* instructions, int numProcesses) {
     sortInstructions(&instructions, numProcesses);
     for (int i = 0; i < numProcesses; i++) {
         //printf("PID %d with burst %d arrived at time %d\n", instructions[i].processID, instructions[i].burstDuration, instructions[i].arrivalTime);
     }
-
+    //printf("make process ptr list\n");
     PtrList processPtrList = *newPtrList(numProcesses);
     int currentTime = 0;
 
+    //printf("stage 1\n");
     Instruction currentInstruction;
     Process* currentProcessPtr = NULL;
     for (int i = 0; i < numProcesses; i++) {
+        //printf("get next arrival\n");
         currentInstruction = instructions[i];
         currentTime = currentInstruction.arrivalTime;
         if (currentProcessPtr != NULL) {
+            //printf("calculate progress\n");
             calculateProgress(currentProcessPtr, currentTime);
         }
+        //printf("create new process and add to list\n");
         int j = append(&processPtrList, (void*) newProcessFromInstruction(currentInstruction));
         currentProcessPtr = getProcess(&processPtrList, j);
+        //printf("sort list\n");
         sortProcessPtrList(&processPtrList);
         if (chooseNext(&processPtrList) != NULL) {
+            //printf("choose next process\n");
             currentProcessPtr = chooseNext(&processPtrList);
             start(currentProcessPtr, currentTime);
         }
     }
 
+    //printf("stage 2\n");
     while (chooseNext(&processPtrList) != NULL) {
         currentProcessPtr = chooseNext(&processPtrList);
         start(currentProcessPtr, currentTime);
@@ -142,6 +164,7 @@ Report runSJFP(int numProcesses, Instruction* instructions) {
         calculateProgress(currentProcessPtr, currentTime);
     }
 
+    //printf("gen report\n");
     Report* reportList = malloc(numProcesses * sizeof(Report));
     for (int i = 0; i < numProcesses; i++) {
         currentProcessPtr = getProcess(&processPtrList, i);
@@ -152,6 +175,6 @@ Report runSJFP(int numProcesses, Instruction* instructions) {
     Report final = calculateReport(numProcesses, reportList, currentTime);
 
     free(reportList);
-    freeList(processPtrList);
+    //freeList(processPtrList);
     return final;
 }
