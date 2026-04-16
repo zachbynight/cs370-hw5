@@ -124,56 +124,79 @@ void start(Process* processPtr, int currentTime) {
     //printf("Starting %d at %d\n", (*processPtr).processID, currentTime);
 }
 
+bool hasIncompleteProcesses(PtrList* processList) {
+    //printf("Checking for incomplete processes\n");
+    Process* pi;
+    for (int i = 0; i < processList->size; i++) {
+        pi = getProcess(processList, i);
+        if (pi == NULL) {
+            continue;
+        }
+        if (!processIsComplete(*pi)) {
+            //printf("PID %d is still incomplete\n", pi->processID);
+            return true;
+        }
+        //printf("PID %d is complete\n", pi->processID);
+    }
+    return false;
+}
+
+// Assumes the list is sorted by arrival time
+bool hasNextArrival(Instruction* instructions, int currentTime, int nextIndex, int numProcesses) {
+    if (nextIndex == numProcesses) {
+        return false;
+    }
+    if (instructions[nextIndex].arrivalTime > currentTime) {
+        //printf("No arrivals\n", currentTime);
+        return false;
+    }
+    //printf("Found one, %d\n", instructions[nextIndex].processID);
+    return true;
+}
+
 Report runSJFP(Instruction* instructions, int numProcesses) {
+    //printf("Sort instructions\n");
     sortInstructions(&instructions, numProcesses);
-    for (int i = 0; i < numProcesses; i++) {
-        //printf("PID %d with burst %d arrived at time %d\n", instructions[i].processID, instructions[i].burstDuration, instructions[i].arrivalTime);
-    }
-    //printf("make process ptr list\n");
-    PtrList processPtrList = *newPtrList(numProcesses);
-    int currentTime = 0;
-
-    //printf("stage 1\n");
+    int currentTime = -1;
+    int nextInstructionIndex = 0;
     Instruction currentInstruction;
-    Process* currentProcessPtr = NULL;
-    for (int i = 0; i < numProcesses; i++) {
-        //printf("get next arrival\n");
-        currentInstruction = instructions[i];
-        currentTime = currentInstruction.arrivalTime;
-        if (currentProcessPtr != NULL) {
-            //printf("calculate progress\n");
-            calculateProgress(currentProcessPtr, currentTime);
+    Instruction nextInstructionPtr;
+    Process* currentProcess = NULL;
+    PtrList* processList = newPtrList(numProcesses);
+    //printf("Start simulation\n");
+    while ((nextInstructionIndex < numProcesses) || hasIncompleteProcesses(processList)) {
+        hasIncompleteProcesses(processList);
+        currentTime++;
+        //printf("Check for new arrivals at time %d\n", currentTime);
+        while (hasNextArrival(instructions, currentTime, nextInstructionIndex, numProcesses)) {
+            currentInstruction = instructions[nextInstructionIndex];
+            //printf("PID %d arrived at time %d\n", currentInstruction.processID, currentInstruction.arrivalTime);
+            void* ptr = newProcessFromInstruction(currentInstruction);
+            append(processList, (void*) newProcessFromInstruction(currentInstruction));
+            nextInstructionIndex++;
         }
-        //printf("create new process and add to list\n");
-        int j = append(&processPtrList, (void*) newProcessFromInstruction(currentInstruction));
-        currentProcessPtr = getProcess(&processPtrList, j);
-        //printf("sort list\n");
-        sortProcessPtrList(&processPtrList);
-        if (chooseNext(&processPtrList) != NULL) {
-            //printf("choose next process\n");
-            currentProcessPtr = chooseNext(&processPtrList);
-            start(currentProcessPtr, currentTime);
+        if (currentProcess != NULL) {
+            //printf("Calculate progress for PID %d\n", currentProcess->processID);
+            calculateProgress(currentProcess, currentTime);
+        }
+        //printf("Sort process queue\n");
+        sortProcessPtrList(processList);
+        if (chooseNext(processList) != NULL) {
+            currentProcess = chooseNext(processList);
+            //printf("PID %d will execute next\n", currentProcess->processID);
+            start(currentProcess, currentTime);
         }
     }
-
-    //printf("stage 2\n");
-    while (chooseNext(&processPtrList) != NULL) {
-        currentProcessPtr = chooseNext(&processPtrList);
-        start(currentProcessPtr, currentTime);
-        currentTime += (*currentProcessPtr).burstDuration - (*currentProcessPtr).progress;
-        calculateProgress(currentProcessPtr, currentTime);
-    }
-
+    //printf("Calculate final report\n");
     //printf("gen report\n");
     Report* reportList = malloc(numProcesses * sizeof(Report));
     for (int i = 0; i < numProcesses; i++) {
-        currentProcessPtr = getProcess(&processPtrList, i);
-        reportList[i] = *((*currentProcessPtr).reportPtr);
+        currentProcess = getProcess(processList, i);
+        reportList[i] = *(currentProcess->reportPtr);
         //printf("ID %d: %s", (*currentProcessPtr).processID, reportAsText(reportList[i]));
         //printf("Arrived at %d, started at %d, AST %d, previous progress %d, completed at %d\n\n", (*currentProcessPtr).arrivalTime, (*currentProcessPtr).startTime, (*currentProcessPtr).activeStartTime, (*currentProcessPtr).previousProgress, (*currentProcessPtr).completionTime);
     }
     Report final = calculateReport(numProcesses, reportList, currentTime);
-
     free(reportList);
     //freeList(processPtrList);
     return final;
