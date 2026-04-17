@@ -5,6 +5,10 @@
 #include <stdio.h>
 
 
+const int SJF_MODE = 0;
+const int PRIORITY_MODE = 1;
+
+
 Report* markComplete(Process* processPtr, int completionTime) {
     //printf("%d (pointer: %d) marked complete at time %d\n", (*processPtr).processID, processPtr, completionTime);
     (*processPtr).progress = (*processPtr).burstDuration;
@@ -52,39 +56,56 @@ Process* getProcessPtrFromId(PtrList* listPtr, int processID) {
     return NULL;
 }
 
-int compareProcesses(const void *p, const void *q) {
-    //printf("comparing %d with %d\n", p, q);
-    //printf("%d\n", *(void**) p);
-    //printf("%d\n", *(void**) q);
+int compareProcessesPriority(const void *p, const void *q) {
     if  (*((void**) p) == NULL) {
-        //printf("p was null, select q\n");
         return 1;
     }
     if  (*((void**) q) == NULL) {
-        //printf("q was null, select q\n");
         return -1;
     }
-    //printf("neither was null\n");
     Process* aPtr = (Process*) *((void**) p);
-    //printf("ptr to a: %d\n", aPtr);
     Process* bPtr = (Process*) *((void**) q);
-    //printf("ptr to b: %d\n", bPtr);
-    //printf("%d\n", (*aPtr).processID);
-    //printf("%d\n", (*bPtr).processID);
-    if ((*aPtr).burstDuration != (*bPtr).burstDuration) {
-        //printf("select shorter burst duration\n");
+    if ((*aPtr).priority == (*bPtr).priority) {
+        return (*aPtr).arrivalTime - (*bPtr).arrivalTime;
+    }
+    return (*aPtr).priority - (*bPtr).priority;
+    }
+
+int compareProcessesSJF(const void *p, const void *q) {
+    if  (*((void**) p) == NULL) {
+        return 1;
+    }
+    if  (*((void**) q) == NULL) {
+        return -1;
+    }
+    Process* aPtr = (Process*) *((void**) p);
+    Process* bPtr = (Process*) *((void**) q);
+    if ((*aPtr).remainingBurst != (*bPtr).remainingBurst) {
         return (*aPtr).remainingBurst - (*bPtr).remainingBurst;
     }
-    //printf("select sooner arrival time\n");
     return (*aPtr).arrivalTime - (*bPtr).arrivalTime;
 }
 
-void sortProcessPtrList(PtrList* listPtr) {
+void sortProcessPtrList(PtrList* listPtr, int mode) {
     //printf("now sorting\n");
-    qsort((*listPtr).list, (*listPtr).size, sizeof(void*), compareProcesses);
+    if (mode == SJF_MODE) {
+        qsort((*listPtr).list, (*listPtr).size, sizeof(void*), compareProcessesSJF);
+    }
+    else if (mode == PRIORITY_MODE) {
+        qsort((*listPtr).list, (*listPtr).size, sizeof(void*), compareProcessesPriority);
+    }
 }
 
-int compareInstructions(const void *p, const void *q) {
+int compareInstructionsPriority(const void *p, const void *q) {
+    Instruction a = *((Instruction*) p);
+    Instruction b = *((Instruction*) q);
+    if (a.arrivalTime == b.arrivalTime) {
+        return a.priority - b.priority;
+    }
+    return a.arrivalTime - b.arrivalTime;
+}
+
+int compareInstructionsSJF(const void *p, const void *q) {
     Instruction a = *((Instruction*) p);
     Instruction b = *((Instruction*) q);
     if (a.arrivalTime == b.arrivalTime) {
@@ -93,8 +114,13 @@ int compareInstructions(const void *p, const void *q) {
     return a.arrivalTime - b.arrivalTime;
 }
 
-void sortInstructions(Instruction** instructionsPtr, int num) {
-    qsort(*instructionsPtr, num, sizeof(Instruction), compareInstructions);
+void sortInstructions(Instruction** instructionsPtr, int num, int mode) {
+    if (mode == SJF_MODE) {
+        qsort(*instructionsPtr, num, sizeof(Instruction), compareInstructionsSJF);
+    }
+    if (mode == PRIORITY_MODE) {
+        qsort(*instructionsPtr, num, sizeof(Instruction), compareInstructionsPriority);
+    }
 }
 
 Process* chooseNext(PtrList* listPtr) {
@@ -154,9 +180,13 @@ bool hasNextArrival(Instruction* instructions, int currentTime, int nextIndex, i
     return true;
 }
 
-Report runSJFP(Instruction* instructions, int numProcesses) {
+Report run(Instruction* instructions, int numProcesses, int mode) {
     //printf("Sort instructions\n");
-    sortInstructions(&instructions, numProcesses);
+    sortInstructions(&instructions, numProcesses, mode);
+    for (int i = 0; i < numProcesses; i++) {
+        //printf("PID %d with priority %d arrives at time %d\n", instructions[i].processID, instructions[i].priority, instructions[i].arrivalTime);
+    }
+    //return nullReport();
     int currentTime = -1;
     int nextInstructionIndex = 0;
     Instruction currentInstruction;
@@ -180,7 +210,7 @@ Report runSJFP(Instruction* instructions, int numProcesses) {
             calculateProgress(currentProcess, currentTime);
         }
         //printf("Sort process queue\n");
-        sortProcessPtrList(processList);
+        sortProcessPtrList(processList, mode);
         if (chooseNext(processList) != NULL) {
             currentProcess = chooseNext(processList);
             //printf("PID %d will execute next\n", currentProcess->processID);
@@ -193,8 +223,8 @@ Report runSJFP(Instruction* instructions, int numProcesses) {
     for (int i = 0; i < numProcesses; i++) {
         currentProcess = getProcess(processList, i);
         reportList[i] = *(currentProcess->reportPtr);
-        //printf("ID %d: %s", (*currentProcessPtr).processID, reportAsText(reportList[i]));
-        //printf("Arrived at %d, started at %d, AST %d, previous progress %d, completed at %d\n\n", (*currentProcessPtr).arrivalTime, (*currentProcessPtr).startTime, (*currentProcessPtr).activeStartTime, (*currentProcessPtr).previousProgress, (*currentProcessPtr).completionTime);
+        //printf("ID %d: %s", currentProcess->processID, reportAsText(reportList[i]));
+        //printf("Arrived at %d, started at %d, AST %d, previous progress %d, completed at %d\n\n", currentProcess->arrivalTime, currentProcess->startTime, currentProcess->activeStartTime, currentProcess->previousProgress, currentProcess->completionTime);
     }
     Report final = calculateReport(numProcesses, reportList, currentTime);
     free(reportList);

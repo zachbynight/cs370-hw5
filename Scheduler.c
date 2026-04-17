@@ -5,7 +5,7 @@
 #include <stdbool.h> 
 #include "Scheduler.h"
 #include "FCFS.h"
-#include "SJFP.h"
+#include "Preemptive.h"
 #include "PtrList.h"
 #include "string.h"
 
@@ -64,23 +64,24 @@ Report calculateReport(int numReports, Report* reportList, int completionTime) {
 }
 
 
-Process* newProcess(int processID, int arrivalTime, int burstDuration) {
+Process* newProcess(int processID, int priority, int arrivalTime, int burstDuration) {
     Process* processPtr = malloc(sizeof(Process));
-    (*processPtr).processID = processID;
-    (*processPtr).arrivalTime = arrivalTime;
-    (*processPtr).burstDuration = burstDuration;
-    (*processPtr).startTime = -1;
-    (*processPtr).activeStartTime = -1;
-    (*processPtr).completionTime = -1;
-    (*processPtr).progress = 0;
-    (*processPtr).remainingBurst = burstDuration;
-    (*processPtr).previousProgress = 0;
-    //printf("Allocating new process %d with pointer %d\n", (*processPtr).processID, processPtr);
+    processPtr->processID = processID;
+    processPtr->priority = priority;
+    processPtr->arrivalTime = arrivalTime;
+    processPtr->burstDuration = burstDuration;
+    processPtr->startTime = -1;
+    processPtr->activeStartTime = -1;
+    processPtr->completionTime = -1;
+    processPtr->progress = 0;
+    processPtr->remainingBurst = burstDuration;
+    processPtr->previousProgress = 0;
+    //printf("Allocating new process %d with pointer %d\n", processPtr->processID, processPtr);
     return processPtr;
 }
 
 Process* newProcessFromInstruction(Instruction instruction) {
-    return newProcess(instruction.processID, instruction.arrivalTime, instruction.burstDuration);
+    return newProcess(instruction.processID, instruction.priority, instruction.arrivalTime, instruction.burstDuration);
 }
 
 Process nullProcess() {
@@ -144,11 +145,18 @@ int main(int argCount, char** args) {
     else {
         printf("--- FCFS ---\n%s\n", reportAsText(report));
     }
-    report = runSJFP(instructions, numProcesses);
+    report = run(instructions, numProcesses, SJF_MODE);
     if (isReportNull(report)) {
         printf("Error: report could not be generated\n");
     }
     else {
         printf("--- SJFP ---\n%s\n", reportAsText(report));
+    }
+    report = run(instructions, numProcesses, PRIORITY_MODE);
+    if (isReportNull(report)) {
+        printf("Error: report could not be generated\n");
+    }
+    else {
+        printf("--- Priority ---\n%s\n", reportAsText(report));
     }
 }

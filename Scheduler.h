@@ -14,6 +14,7 @@ typedef struct {
 #define ProcessDefinition
 typedef struct {
     int processID;
+    int priority;
     int arrivalTime;
     int burstDuration;
     // The time this process first started executing

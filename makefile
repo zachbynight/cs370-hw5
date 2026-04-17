@@ -1,5 +1,5 @@
-MAIN_FILES=Scheduler.c Instruction.c FCFS.c SJFP.c PtrList.c
-HEADER_FILES=Scheduler.h Instruction.h FCFS.h SJFP.h PtrList.h
+MAIN_FILES=Scheduler.c Instruction.c FCFS.c Preemptive.c PtrList.c
+HEADER_FILES=Scheduler.h Instruction.h FCFS.h Preemptive.h PtrList.h
 MAIN_OUT_FILE=Scheduler.out
 
 FILES_TO_ZIP=${MAIN_FILES} ${HEADER_FILES} README.md makefile
